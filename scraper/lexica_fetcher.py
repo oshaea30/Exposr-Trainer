@@ -1,4 +1,4 @@
-"""CivitAI API fetcher for AI-generated images."""
+"""Lexica.art API fetcher for AI-generated images."""
 import os
 import aiohttp
 import hashlib
@@ -13,21 +13,21 @@ from scraper.image_cleaner import is_valid_image
 logger = logging.getLogger(__name__)
 
 
-class CivitAIFetcher(BaseFetcher):
-    """Fetch images from CivitAI API (AI-generated images)."""
+class LexicaFetcher(BaseFetcher):
+    """Fetch images from Lexica.art API (AI-generated images)."""
     
     def __init__(self, config: dict):
-        """Initialize CivitAI fetcher."""
+        """Initialize Lexica fetcher."""
         self.config = config
-        self.api_url = os.getenv("CIVITAI_API_URL", "https://civitai.com/api/v1")
-        self.api_key = os.getenv("CIVITAI_API_KEY", "")
+        # Lexica has a public JSON API (no auth required)
+        self.api_url = "https://lexica.art/api/v1/search"
         
-        source_config = config.get("civitai", {})
-        self.queries = source_config.get("queries", ["characters", "landscapes", "portraits"])
+        source_config = config.get("lexica", {})
+        self.queries = source_config.get("queries", ["portrait", "landscape", "character"])
         self.limit_per_query = source_config.get("limit_per_query", 10)
     
     async def fetch_images(self, limit: int = 25) -> List[Tuple[bytes, dict]]:
-        """Fetch AI-generated images from CivitAI."""
+        """Fetch AI-generated images from Lexica.art."""
         samples = []
         
         try:
@@ -37,27 +37,24 @@ class CivitAIFetcher(BaseFetcher):
                     if len(samples) >= limit:
                         break
                     
-                    # Search images
-                    url = f"{self.api_url}/images"
+                    # Search images - Lexica public JSON API
+                    url = self.api_url
                     params = {
-                        "limit": min(self.limit_per_query, limit - len(samples)),
-                        "nsfw": "false"
+                        "q": query,
+                        "limit": min(self.limit_per_query, limit - len(samples))
                     }
                     
-                    headers = {}
-                    if self.api_key:
-                        headers["Authorization"] = f"Bearer {self.api_key}"
-                    
-                    async with session.get(url, params=params, headers=headers) as response:
+                    async with session.get(url, params=params) as response:
                         if response.status == 200:
                             data = await response.json()
+                            images = data.get("images", [])
                             
-                            for item in data.get("items", []):
+                            for item in images:
                                 if len(samples) >= limit:
                                     break
                                 
                                 # Get image URL
-                                image_url = item.get("url")
+                                image_url = item.get("src") or item.get("url")
                                 if not image_url:
                                     continue
                                 
@@ -69,11 +66,13 @@ class CivitAIFetcher(BaseFetcher):
                                 # Create metadata
                                 metadata = self._create_metadata(item, image_url, image_bytes)
                                 samples.append((image_bytes, metadata))
+                        else:
+                            logger.warning(f"Lexica API returned status {response.status}")
                         
-                        logger.info(f"Fetched {len(samples)} images from CivitAI (query: {query})")
+                        logger.info(f"Fetched {len(samples)} images from Lexica (query: {query})")
         
         except Exception as e:
-            logger.error(f"Error fetching from CivitAI: {e}")
+            logger.error(f"Error fetching from Lexica: {e}")
         
         return samples
     
@@ -89,32 +88,33 @@ class CivitAIFetcher(BaseFetcher):
         return None
     
     def _create_metadata(self, item: dict, image_url: str, image_bytes: bytes) -> dict:
-        """Create metadata dictionary for CivitAI image."""
+        """Create metadata dictionary for Lexica image."""
         image_hash = hashlib.sha256(image_bytes).hexdigest()
         
         return {
             "id": str(uuid4()),
             "image_url": image_url,
-            "source": "civitai",
+            "source": "lexica",
             "label": "ai_generated",
             "confidence": None,
             "timestamp": datetime.utcnow().isoformat(),
             "hash": image_hash,
             "attribution": {
-                "platform": "CivitAI",
+                "platform": "Lexica.art",
                 "creator": "Community",
                 "license": "Community content",
-                "url": f"https://civitai.com/images/{item.get('id')}"
+                "url": f"https://lexica.art/?q={item.get('prompt', '')}"
             },
             "api_data": {
                 "image_id": item.get("id"),
                 "width": item.get("width"),
                 "height": item.get("height"),
-                "model": item.get("model") or {}
+                "prompt": item.get("prompt"),
+                "model": item.get("model", "stable-diffusion")
             }
         }
     
     def get_source_name(self) -> str:
         """Return source name."""
-        return "civitai"
+        return "lexica"
 

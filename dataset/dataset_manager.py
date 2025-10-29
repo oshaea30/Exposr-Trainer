@@ -129,7 +129,7 @@ class DatasetManager:
                     label = metadata.get("label")
                     total += 1
                     
-                    if label == "ai_generated":
+                    if label == "ai_generated" or label == "ai":
                         ai_generated += 1
                     elif label == "real":
                         real += 1

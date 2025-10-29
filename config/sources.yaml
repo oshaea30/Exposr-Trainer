@@ -42,3 +42,13 @@ sources:
       - "portraits"
     limit_per_query: 10
     rate_limit_per_hour: 100
+
+  - name: lexica
+    enabled: true
+    label: "ai"
+    queries:
+      - "portrait"
+      - "landscape"
+      - "character"
+    limit_per_query: 10
+    rate_limit_per_hour: 50
