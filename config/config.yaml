@@ -1,0 +1,21 @@
+storage:
+  driver: local # local | s3
+  local_path: ./datasets
+  models_path: ./models
+  s3_bucket: exposr-datasets
+
+scheduler:
+  scrape_interval_hours: 12
+  train_interval_days: 7
+
+api:
+  host: 0.0.0.0
+  port: 8001
+  require_auth: true
+
+reddit:
+  user_agent: "Exposr-Trainer/1.0"
+
+exposr_core:
+  endpoint: "http://localhost:8000/api/v1/analyze"
+  enabled: true

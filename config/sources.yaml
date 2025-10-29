@@ -1,0 +1,44 @@
+# Disabled sources (due to IP blocking)
+reddit:
+  enabled: false
+  subreddits:
+    - AIGeneratedArt
+    - StableDiffusion
+    - midjourney
+    - pics
+    - photographs
+  min_score: 10
+  max_age_days: 7
+
+# Active image sources
+sources:
+  - name: unsplash
+    enabled: true
+    label: "real"
+    queries:
+      - "portrait photography"
+      - "nature photography"
+      - "product photography"
+    limit_per_query: 10
+    topic: "technology"
+    rate_limit_per_hour: 50
+
+  - name: pexels
+    enabled: true
+    label: "real"
+    queries:
+      - "fashion"
+      - "lifestyle"
+      - "business"
+    limit_per_query: 10
+    rate_limit_per_hour: 200
+
+  - name: civitai
+    enabled: true
+    label: "ai"
+    queries:
+      - "characters"
+      - "landscapes"
+      - "portraits"
+    limit_per_query: 10
+    rate_limit_per_hour: 100
